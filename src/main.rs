@@ -64,6 +64,7 @@ macro_rules! command_list {
     split       Split CSV data into many files
     stats       Compute basic statistics
     table       Align CSV data into columns
+    uniq        Filter out duplicate records
 "
     )
 }
@@ -161,6 +162,7 @@ enum Command {
     Split,
     Stats,
     Table,
+    Uniq,
 }
 
 impl Command {
@@ -171,7 +173,7 @@ impl Command {
 
         if !argv[1].chars().all(char::is_lowercase) {
             return Err(CliError::Other(format!(
-                "xsv expects commands in lowercase. Did you mean '{}'?", 
+                "xsv expects commands in lowercase. Did you mean '{}'?",
                 argv[1].to_lowercase()).to_string()));
         }
         match self {
@@ -196,6 +198,7 @@ impl Command {
             Command::Split => cmd::split::run(argv),
             Command::Stats => cmd::stats::run(argv),
             Command::Table => cmd::table::run(argv),
+            Command::Uniq => cmd::uniq::run(argv),
         }
     }
 }
