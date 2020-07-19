@@ -1,6 +1,6 @@
 use std::fs;
 use std::io;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use channel;
 use csv;
@@ -81,13 +81,15 @@ impl Args {
         let mut row = csv::ByteRecord::new();
         while rdr.read_byte_record(&mut row)? {
             if i > 0 && i % self.flag_size == 0 {
-                wtr.flush()?;
+                wtr.1.flush()?;
+                println!("{}", wtr.0.display());
                 wtr = self.new_writer(&headers, i)?;
             }
-            wtr.write_byte_record(&row)?;
+            wtr.1.write_byte_record(&row)?;
             i += 1;
         }
-        wtr.flush()?;
+        wtr.1.flush()?;
+        println!("{}", wtr.0.display());
         Ok(())
     }
 
@@ -113,9 +115,9 @@ impl Args {
                 idx.seek((i * args.flag_size) as u64).unwrap();
                 for row in idx.byte_records().take(args.flag_size) {
                     let row = row.unwrap();
-                    wtr.write_byte_record(&row).unwrap();
+                    wtr.1.write_byte_record(&row).unwrap();
                 }
-                wtr.flush().unwrap();
+                wtr.1.flush().unwrap();
                 drop(tx);
             });
         }
@@ -128,7 +130,7 @@ impl Args {
         &self,
         headers: &csv::ByteRecord,
         start: usize,
-    ) -> CliResult<csv::Writer<Box<io::Write+'static>>> {
+    ) -> CliResult<(PathBuf, csv::Writer<Box<io::Write+'static>>)> {
         let dir = Path::new(&self.arg_outdir);
         let path = dir.join(self.flag_filename.filename(&format!("{}", start)));
         let spath = Some(path.display().to_string());
@@ -136,7 +138,7 @@ impl Args {
         if !self.rconfig().no_headers {
             wtr.write_record(headers)?;
         }
-        Ok(wtr)
+        Ok((path, wtr))
     }
 
     fn rconfig(&self) -> Config {
