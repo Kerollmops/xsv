@@ -1,11 +1,8 @@
-use csv;
-
-use std::collections::hash_map::DefaultHasher;
 use std::collections::HashSet;
-use std::hash::{Hash, Hasher};
 
 use CliResult;
 use config::{Delimiter, Config};
+use csv;
 use select::SelectColumns;
 use util;
 
@@ -34,12 +31,6 @@ struct Args {
     flag_delimiter: Option<Delimiter>,
 }
 
-fn calculate_hash<T: Hash>(t: &T) -> u64 {
-    let mut s = DefaultHasher::new();
-    t.hash(&mut s);
-    s.finish()
-}
-
 pub fn run(argv: &[&str]) -> CliResult<()> {
     let args: Args = util::get_args(USAGE, argv)?;
     let configs = util::many_configs(&args.arg_input,
@@ -65,7 +56,8 @@ pub fn run(argv: &[&str]) -> CliResult<()> {
                 buffer.push(0);
             }
 
-            let hash = calculate_hash(&buffer);
+            // FIXME simple sha3 import do not compile.
+            let hash = <sha3::Sha3_256 as sha3::Digest>::digest(&buffer);
             if hashes.insert(hash) {
                 wtr.write_byte_record(&record)?;
             }
